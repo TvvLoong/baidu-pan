@@ -77,25 +77,13 @@ const ALREADY_RE =
 const IN_ACTIONS = process.env.GITHUB_ACTIONS === 'true';
 const SUMMARY_FILE = process.env.GITHUB_STEP_SUMMARY || '';
 
-// ===================== SC3推送函数 POST JSON 版本 =====================
+// ===================== SC3推送函数 GET 版本 =====================
 async function sendSC3(title, desp) {
-  const SC3_KEY = process.env.SC3_KEY;
-  if (!SC3_KEY) {
-    console.log("⚠️ 未配置SC3_KEY，跳过SC3推送");
-    return;
-  }
-  const url = `https://10348.max.ft07.com/send/${SC3_KEY}`;
+  const url = new URL('https://31779.push.ft07.com/send/sctp31779tgasdge5zl771e72uwzjeae.send');
+  url.searchParams.set('title', title);
+  url.searchParams.set('desp', desp);
   try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        title,
-        desp
-      })
-    });
+    const res = await fetch(url);
     const text = await res.text();
     if (res.ok) {
       console.log("✅ SC3推送成功：", text);
