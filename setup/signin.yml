@@ -43,4 +43,5 @@ jobs:
           SCX_KEY: ${{ secrets.SCX_KEY }}
           SC3_KEY: ${{ secrets.SC3_KEY }}
           BAIDU_COOKIE: ${{ secrets.BAIDU_COOKIE }}
+          WXPUSHER_SPT: ${{ secrets.WXPUSHER_SPT }}
         run: node scripts/signin.js
