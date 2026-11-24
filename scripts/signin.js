@@ -77,26 +77,37 @@ const ALREADY_RE =
 const IN_ACTIONS = process.env.GITHUB_ACTIONS === 'true';
 const SUMMARY_FILE = process.env.GITHUB_STEP_SUMMARY || '';
 
-// ===================== SC3推送函数 GET 版本 =====================
-async function sendSC3(title, desp) {
-  const SC3_KEY = process.env.SC3_KEY;
-  if (!SC3_KEY) {
-    console.log("⚠️ 未配置SC3_KEY，跳过SC3推送");
+// ===================== WxPusher推送函数 POST JSON 版本 =====================
+async function sendWxPusher(title, desp) {
+  const spt = (process.env.WXPUSHER_SPT || '').trim();
+  if (!spt) {
+    console.log('⚠️ 未配置 WXPUSHER_SPT，跳过 WxPusher 推送');
     return;
   }
-  const url = new URL(`https://31779.push.ft07.com/send/${encodeURIComponent(SC3_KEY)}.send`);
-  url.searchParams.set('title', title);
-  url.searchParams.set('desp', desp);
   try {
-    const res = await fetch(url);
-    const text = await res.text();
-    if (res.ok) {
-      console.log("✅ SC3推送成功：", text);
+    const res = await fetch('https://wxpusher.zjiecode.com/api/send/message/simple-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: desp,
+        summary: title.slice(0, 100),
+        contentType: 1,
+        spt,
+      }),
+    });
+    if (!res.ok) {
+      console.log('❌ WxPusher推送失败：HTTP', res.status);
+      return;
+    }
+    const result = await res.json();
+    // HTTP 200 仍可能携带业务错误，成功码为 1000。
+    if (result && result.code === 1000) {
+      console.log('✅ WxPusher推送请求已受理');
     } else {
-      console.log("❌ SC3推送失败：", text);
+      console.log('❌ WxPusher推送失败：code=', result?.code ?? '未知');
     }
   } catch (err) {
-    console.log("❌ SC3推送异常：", err.message);
+    console.log('❌ WxPusher推送异常：', err.name);
   }
 }
 // =====================================================================
@@ -458,7 +469,7 @@ async function main() {
   for (const r of results) say(`${r.ok ? '[√]' : '[×]'} ${r.name}：${r.msg}`);
   say('-'.repeat(46));
 
-  // ========== 拼接推送文本，调用SC3推送 ==========
+  // ========== 拼接推送文本，调用WxPusher推送 ==========
   let pushContent = `百度网盘签到 — ${today()}\n`;
   for (const r of results) {
     pushContent += `${r.ok ? '[√]' : '[×]'} ${r.name}：${r.msg}\n`;
@@ -470,7 +481,7 @@ async function main() {
   } else {
     pushContent += "\n✅ 全部任务完成";
   }
-  await sendSC3("百度网盘签到通知", pushContent);
+  await sendWxPusher("百度网盘签到通知", pushContent);
   // =============================================
 
   if (cookieDead) {
